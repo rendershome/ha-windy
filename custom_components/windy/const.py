@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "windy"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 ATTRIBUTION = "Data provided by Windy.com"
 WEBCAM_ATTRIBUTION = "Webcams provided by windy.com"
 

@@ -11,11 +11,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import (
-    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
-    DEGREE,
-    EntityCategory,
-)
+from homeassistant.const import DEGREE, EntityCategory, UnitOfDensity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -115,7 +111,7 @@ WEATHER_SENSORS = (
     ),
 )
 
-_UG = frozenset({CONCENTRATION_MICROGRAMS_PER_CUBIC_METER})
+_UG = frozenset({UnitOfDensity.MICROGRAMS_PER_CUBIC_METER})
 
 AIR_QUALITY_SENSORS = (
     _measure("aqi_us-surface", "Air quality index", SensorDeviceClass.AQI),

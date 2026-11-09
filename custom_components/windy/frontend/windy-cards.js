@@ -9,6 +9,8 @@ class WindyMapCard extends HTMLElement {
   setConfig(config) {
     this._config = { overlay: "wind", zoom: 7, height: 450, ...config };
     this._started = false;
+    if (this._onMessage) window.removeEventListener("message", this._onMessage);
+    this._onMessage = undefined;
     this.innerHTML = "";
   }
 
@@ -57,10 +59,11 @@ class WindyMapCard extends HTMLElement {
     frame.src = `${BASE}/map.html`;
     frame.title = "Windy map";
     frame.style.cssText = "border:0;width:100%;height:100%;display:block";
-    const onMessage = (event) => {
+    // Moving a card in the page reloads its frame, and the reloaded frame asks
+    // for its settings again, so this keeps listening while the card is attached.
+    this._onMessage = (event) => {
       if (event.source !== frame.contentWindow || event.origin !== location.origin) return;
       if (event.data?.type !== "windy-ready") return;
-      window.removeEventListener("message", onMessage);
       const { overlay, level, product, zoom, latitude, longitude } = this._config;
       frame.contentWindow.postMessage(
         {
@@ -77,8 +80,16 @@ class WindyMapCard extends HTMLElement {
         location.origin,
       );
     };
-    window.addEventListener("message", onMessage);
+    if (this.isConnected) window.addEventListener("message", this._onMessage);
     body.append(frame);
+  }
+
+  connectedCallback() {
+    if (this._onMessage) window.addEventListener("message", this._onMessage);
+  }
+
+  disconnectedCallback() {
+    if (this._onMessage) window.removeEventListener("message", this._onMessage);
   }
 
   _message(parent, text) {
