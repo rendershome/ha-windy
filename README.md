@@ -34,14 +34,14 @@ Create a separate key for each service:
 ### Free test keys
 
 - **Point Forecast:** test keys return data for **random coordinates**, so the values aren't your real weather.
-- **Map Forecast:** the free version is limited and is for development only. Production use needs the Professional version.
+- **Map Forecast:** the free version is limited and is for development only. In testing, a limited key allowed only the wind, temperature and pressure layers on the GFS model. Production use needs the Professional version.
 - **Webcams:** free image links expire after 10 minutes, so keep the webcam update interval under 10 minutes.
 
 Check [Windy's API pages](https://api.windy.com) for current terms and pricing.
 
 ## Dashboard cards
 
-The cards are loaded automatically when the integration starts.
+The cards are loaded automatically when the integration starts. To add one, edit a dashboard, choose **Add card → By card**, and search for **Windy**. Both cards have menus for their settings, and you can use YAML instead with **Show code editor**.
 
 ### Map
 
@@ -55,13 +55,15 @@ height: 450
 
 | Option | Default | Description |
 |---|---|---|
-| `location` | First location with a map key | Name of the Windy location to use |
-| `overlay` | `wind` | Map layer, such as `wind`, `rain`, `temp`, `clouds` or `waves` |
+| `location` | First location with a map key | Name of the Windy location to use. The menu only appears with more than one location. |
+| `overlay` | `wind` | Map layer, such as `wind`, `temp` or `pressure`. Other layers, such as `rain` or `clouds`, may need a Professional key. |
 | `zoom` | `7` | Zoom level |
 | `height` | `450` | Card height in pixels |
 | `level` | Windy's default | Altitude level, such as `surface` or `850h` |
 | `product` | Windy's default | Forecast model used by the map |
 | `latitude`, `longitude` | The location's | Map center |
+
+If your key doesn't include a layer, model or altitude you choose, the map shows a notice and uses Windy's default.
 
 The map key has to reach your browser for Windy's map to work, so any logged-in Home Assistant user can read it. It isn't stored in dashboard YAML.
 

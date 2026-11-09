@@ -1,21 +1,174 @@
 // Dashboard cards for the Windy integration.
 const BASE = "/windy_static";
+const REDRAW_DELAY_MS = 500;
+
+const options = (entries) =>
+  Object.entries(entries).map(([value, label]) => ({ value, label }));
+
+const OVERLAYS = options({
+  wind: "Wind",
+  gust: "Wind gusts",
+  rain: "Rain and thunder",
+  rainAccu: "Rain accumulation",
+  snowAccu: "New snow",
+  snowcover: "Snow depth",
+  ptype: "Precipitation type",
+  thunder: "Thunderstorms",
+  temp: "Temperature",
+  dewpoint: "Dew point",
+  rh: "Humidity",
+  deg0: "Freezing level",
+  pressure: "Pressure",
+  clouds: "Clouds",
+  lclouds: "Low clouds",
+  mclouds: "Medium clouds",
+  hclouds: "High clouds",
+  cloudtop: "Cloud tops",
+  cbase: "Cloud base",
+  visibility: "Visibility",
+  fog: "Fog",
+  cape: "CAPE index",
+  radar: "Weather radar",
+  satellite: "Satellite",
+  waves: "Waves",
+  swell1: "Swell",
+  wwaves: "Wind waves",
+  currents: "Currents",
+  sst: "Sea temperature",
+  airQ: "Air quality",
+  pm2p5: "PM2.5",
+  no2: "Nitrogen dioxide",
+  gtco3: "Ozone",
+  aod550: "Aerosols",
+  cosc: "Carbon monoxide",
+  dustsm: "Dust",
+  fires: "Fires",
+});
+
+const PRODUCTS = options({
+  gfs: "GFS (global)",
+  ecmwf: "ECMWF (global)",
+  icon: "ICON (global)",
+  iconEu: "ICON-EU (Europe)",
+  iconD2: "ICON-D2 (Germany)",
+  arome: "AROME (France and nearby)",
+  namConus: "NAM (contiguous USA)",
+  namAlaska: "NAM (Alaska)",
+  namHawaii: "NAM (Hawaii)",
+  hrrrConus: "HRRR (contiguous USA)",
+  hrrrAlaska: "HRRR (Alaska)",
+});
+
+const LEVELS = options({
+  surface: "Surface",
+  "100m": "100 m",
+  "975h": "975 hPa",
+  "950h": "950 hPa",
+  "925h": "925 hPa",
+  "900h": "900 hPa",
+  "850h": "850 hPa",
+  "800h": "800 hPa",
+  "700h": "700 hPa",
+  "600h": "600 hPa",
+  "500h": "500 hPa",
+  "400h": "400 hPa",
+  "300h": "300 hPa",
+  "250h": "250 hPa",
+  "200h": "200 hPa",
+  "150h": "150 hPa",
+});
+
+const MAP_LABELS = {
+  title: "Title",
+  location: "Location",
+  overlay: "Map layer",
+  zoom: "Zoom",
+  height: "Height",
+  product: "Forecast model",
+  level: "Altitude",
+  latitude: "Center latitude",
+  longitude: "Center longitude",
+};
+
+const MAP_HELPERS = {
+  overlay: "Some layers need a Professional Windy key. The map says so if yours doesn't include the one you choose.",
+  product: "Leave blank to use Windy's default.",
+  level: "Leave blank for the surface. Not every layer has altitude levels.",
+  latitude: "Leave blank to center on the Windy location.",
+  longitude: "Leave blank to center on the Windy location.",
+};
+
+const select = (name, choices, required = false) => ({
+  name,
+  required,
+  selector: { select: { mode: "dropdown", options: choices } },
+});
+
+const dropEmpty = (config) =>
+  Object.fromEntries(
+    Object.entries(config).filter(([, value]) => value !== undefined && value !== null && value !== ""),
+  );
 
 class WindyMapCard extends HTMLElement {
   static getStubConfig() {
-    return { overlay: "wind", zoom: 7 };
+    return { overlay: "wind", zoom: 7, height: 450 };
+  }
+
+  static async getConfigForm() {
+    // A location menu is only useful with more than one location.
+    let locations = [];
+    try {
+      const hass = document.querySelector("home-assistant")?.hass;
+      const entries = await hass?.callWS({ type: "windy/map_config" });
+      locations = (entries ?? []).map((entry) => entry.title);
+    } catch (err) {
+      locations = [];
+    }
+    const locationField =
+      locations.length > 1
+        ? [select("location", locations.map((title) => ({ value: title, label: title })))]
+        : [];
+    return {
+      schema: [
+        { name: "title", selector: { text: {} } },
+        ...locationField,
+        select("overlay", OVERLAYS, true),
+        { name: "zoom", selector: { number: { min: 3, max: 11, step: 1, mode: "slider" } } },
+        {
+          name: "height",
+          selector: { number: { min: 200, max: 1000, step: 10, mode: "box", unit_of_measurement: "px" } },
+        },
+        {
+          type: "expandable",
+          name: "",
+          flatten: true,
+          title: "Advanced",
+          schema: [
+            select("product", PRODUCTS),
+            select("level", LEVELS),
+            { name: "latitude", selector: { number: { min: -90, max: 90, step: "any", mode: "box" } } },
+            { name: "longitude", selector: { number: { min: -180, max: 180, step: "any", mode: "box" } } },
+          ],
+        },
+      ],
+      computeLabel: (schema) => MAP_LABELS[schema.name],
+      computeHelper: (schema) => MAP_HELPERS[schema.name],
+    };
   }
 
   setConfig(config) {
-    this._config = { overlay: "wind", zoom: 7, height: 450, ...config };
-    this._started = false;
-    if (this._onMessage) window.removeEventListener("message", this._onMessage);
-    this._onMessage = undefined;
-    this.innerHTML = "";
+    const next = { overlay: "wind", zoom: 7, height: 450, ...dropEmpty(config) };
+    if (JSON.stringify(next) === JSON.stringify(this._config)) return;
+    this._config = next;
+    // Redraw after a pause, so dragging a slider doesn't reload the map each step.
+    clearTimeout(this._redraw);
+    if (this._started && this._hass) {
+      this._redraw = setTimeout(() => this._start(), REDRAW_DELAY_MS);
+    }
   }
 
   getCardSize() {
-    return Math.ceil(this._config.height / 50);
+    return Math.ceil(Number(this._config.height) / 50);
   }
 
   set hass(hass) {
@@ -27,10 +180,14 @@ class WindyMapCard extends HTMLElement {
   }
 
   async _start() {
+    const run = (this._run = (this._run ?? 0) + 1);
+    if (this._onMessage) window.removeEventListener("message", this._onMessage);
+    this._onMessage = undefined;
+
     const card = document.createElement("ha-card");
     if (this._config.title) card.header = this._config.title;
     const body = document.createElement("div");
-    body.style.cssText = `position:relative;height:${Number(this._config.height)}px;overflow:hidden;border-radius:inherit`;
+    body.style.cssText = `position:relative;height:${Number(this._config.height) || 450}px;overflow:hidden;border-radius:inherit`;
     card.append(body);
     this.replaceChildren(card);
 
@@ -38,9 +195,12 @@ class WindyMapCard extends HTMLElement {
     try {
       entries = await this._hass.callWS({ type: "windy/map_config" });
     } catch (err) {
-      this._message(body, "Couldn't reach the Windy integration. Restart Home Assistant after installing it.");
+      if (run === this._run) {
+        this._message(body, "Couldn't reach the Windy integration. Restart Home Assistant after installing it.");
+      }
       return;
     }
+    if (run !== this._run) return; // The settings changed while waiting.
     const wanted = this._config.location;
     const entry = wanted ? entries.find((e) => e.title === wanted) : entries[0];
     if (!entry) {
@@ -100,6 +260,9 @@ class WindyMapCard extends HTMLElement {
   }
 }
 
+const WEBCAM_LABELS = { entity: "Webcam", title: "Title" };
+const WEBCAM_HELPERS = { title: "Leave blank to use the webcam's name." };
+
 class WindyWebcamCard extends HTMLElement {
   static getStubConfig(hass) {
     const entity = Object.keys(hass.states).find(
@@ -108,10 +271,27 @@ class WindyWebcamCard extends HTMLElement {
     return { entity: entity ?? "" };
   }
 
+  static getConfigForm() {
+    return {
+      schema: [
+        {
+          name: "entity",
+          required: true,
+          selector: { entity: { filter: [{ integration: "windy", domain: "camera" }] } },
+        },
+        { name: "title", selector: { text: {} } },
+      ],
+      computeLabel: (schema) => WEBCAM_LABELS[schema.name],
+      computeHelper: (schema) => WEBCAM_HELPERS[schema.name],
+    };
+  }
+
   setConfig(config) {
     if (!config.entity) throw new Error("Choose a Windy webcam camera entity");
-    this._config = config;
+    this._config = dropEmpty(config);
     this._image = undefined;
+    // Show the change right away instead of waiting for the next state update.
+    if (this._hass) this.hass = this._hass;
   }
 
   getCardSize() {
@@ -119,6 +299,7 @@ class WindyWebcamCard extends HTMLElement {
   }
 
   set hass(hass) {
+    this._hass = hass;
     const state = hass.states[this._config.entity];
     if (!this._image) this._build();
     if (!state) {

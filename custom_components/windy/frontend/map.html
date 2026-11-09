@@ -12,17 +12,24 @@
         font: 14px system-ui, sans-serif; background: #1c1c1c; color: #eee;
         z-index: 100000;
       }
+      #notice {
+        display: none; position: absolute; top: 8px; left: 8px; right: 110px;
+        padding: 6px 10px; border-radius: 4px; font: 12px system-ui, sans-serif;
+        background: rgba(0, 0, 0, .75); color: #fff; z-index: 100000;
+      }
     </style>
   </head>
   <body>
     <div id="windy"></div>
     <div id="status">Loading Windy map&hellip;</div>
+    <div id="notice" role="status"></div>
     <script>
       // Contains no secrets: the key arrives by message from the parent card.
       const LEAFLET = "https://unpkg.com/leaflet@1.4.0/dist/leaflet.js";
       const LIB_BOOT = "https://api.windy.com/assets/map-forecast/libBoot.js";
       const LOAD_TIMEOUT_MS = 30000;
       const status = document.getElementById("status");
+      const notice = document.getElementById("notice");
       let started = false;
 
       const fail = (text) => {
@@ -58,9 +65,21 @@
           ({ map, store }) => {
             clearTimeout(timer);
             status.style.display = "none";
-            if (config.overlay) store.set("overlay", config.overlay);
-            if (config.level) store.set("level", config.level);
-            if (config.product) store.set("product", config.product);
+            const unavailable = [];
+            for (const [name, setting] of [["overlay", "layer"], ["product", "forecast model"], ["level", "altitude"]]) {
+              const value = config[name];
+              if (!value) continue;
+              const allowed = store.getAllowed(name);
+              if (Array.isArray(allowed) && !allowed.includes(value)) {
+                unavailable.push(`${setting} "${value}"`);
+              } else {
+                store.set(name, value);
+              }
+            }
+            if (unavailable.length) {
+              notice.textContent = `Your Windy key doesn't include: ${unavailable.join(", ")}. Showing the default instead.`;
+              notice.style.display = "block";
+            }
             L.circleMarker([config.marker.lat, config.marker.lon], {
               radius: 6, color: "#fff", weight: 2, fillColor: "#03a9f4", fillOpacity: 1,
             }).addTo(map);
