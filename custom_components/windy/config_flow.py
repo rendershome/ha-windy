@@ -23,6 +23,7 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -40,8 +41,7 @@ from .api import (
     fetch_webcams,
 )
 from .const import (
-    AIR_QUALITY_MODELS,
-    AIR_QUALITY_OFF,
+    AIR_QUALITY_LABELS,
     CONF_AIR_QUALITY_MODEL,
     CONF_MAP_KEY,
     CONF_MODEL,
@@ -61,6 +61,7 @@ from .const import (
     DOMAIN,
     MAX_WEBCAM_RADIUS,
     MAX_WEBCAMS,
+    MODEL_LABELS,
     MODEL_PARAMETERS,
 )
 
@@ -230,14 +231,22 @@ class WindyConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
 
-def _model_selector() -> SelectSelector:
+def _select(labels: dict[str, str]) -> SelectSelector:
+    # Windy's mixed-case model names aren't valid translation keys, so the
+    # labels are set here instead of in translations.
     return SelectSelector(
         SelectSelectorConfig(
-            options=list(MODEL_PARAMETERS),
+            options=[
+                SelectOptionDict(value=value, label=label)
+                for value, label in labels.items()
+            ],
             mode=SelectSelectorMode.DROPDOWN,
-            translation_key="model",
         )
     )
+
+
+def _model_selector() -> SelectSelector:
+    return _select(MODEL_LABELS)
 
 
 class WindyOptionsFlow(OptionsFlowWithReload):
@@ -273,13 +282,7 @@ class WindyOptionsFlow(OptionsFlowWithReload):
                         default=options.get(
                             CONF_AIR_QUALITY_MODEL, DEFAULT_AIR_QUALITY_MODEL
                         ),
-                    ): SelectSelector(
-                        SelectSelectorConfig(
-                            options=[AIR_QUALITY_OFF, *AIR_QUALITY_MODELS],
-                            mode=SelectSelectorMode.DROPDOWN,
-                            translation_key="air_quality_model",
-                        )
-                    ),
+                    ): _select(AIR_QUALITY_LABELS),
                     vol.Required(
                         CONF_POINT_INTERVAL,
                         default=options.get(

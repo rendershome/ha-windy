@@ -61,32 +61,5 @@
     "error": {
       "invalid_webcam_ids": "Enter up to 50 numeric IDs separated by commas."
     }
-  },
-  "selector": {
-    "air_quality_model": {
-      "options": {
-        "off": "Off",
-        "cams": "CAMS (global)",
-        "camsEu": "CAMS (Europe)"
-      }
-    },
-    "model": {
-      "options": {
-        "gfs": "GFS (global)",
-        "icon": "ICON (global)",
-        "iconEu": "ICON-EU (Europe)",
-        "iconD2": "ICON-D2 (Germany)",
-        "arome": "AROME (France and nearby)",
-        "aromeFrance": "AROME France",
-        "aromeAntilles": "AROME Antilles",
-        "aromeReunion": "AROME Réunion",
-        "namConus": "NAM (contiguous USA)",
-        "namHawaii": "NAM (Hawaii)",
-        "namAlaska": "NAM (Alaska)",
-        "hrrrConus": "HRRR (contiguous USA)",
-        "hrrrAlaska": "HRRR (Alaska)",
-        "canHrdps": "HRDPS (Canada)"
-      }
-    }
   }
 }

@@ -65,7 +65,28 @@ MODEL_PARAMETERS: dict[str, tuple[str, ...]] = {
     "canHrdps": _BASE,
 }
 
-AIR_QUALITY_MODELS = ("cams", "camsEu")
+MODEL_LABELS: dict[str, str] = {
+    "gfs": "GFS (global)",
+    "icon": "ICON (global)",
+    "iconEu": "ICON-EU (Europe)",
+    "iconD2": "ICON-D2 (Germany)",
+    "arome": "AROME (France and nearby)",
+    "aromeFrance": "AROME France",
+    "aromeAntilles": "AROME Antilles",
+    "aromeReunion": "AROME Réunion",
+    "namConus": "NAM (contiguous USA)",
+    "namHawaii": "NAM (Hawaii)",
+    "namAlaska": "NAM (Alaska)",
+    "hrrrConus": "HRRR (contiguous USA)",
+    "hrrrAlaska": "HRRR (Alaska)",
+    "canHrdps": "HRDPS (Canada)",
+}
+
+AIR_QUALITY_LABELS: dict[str, str] = {
+    AIR_QUALITY_OFF: "Off",
+    "cams": "CAMS (global)",
+    "camsEu": "CAMS (Europe)",
+}
 AIR_QUALITY_PARAMETERS = (
     "aqi",
     "so2sm",
