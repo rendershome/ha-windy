@@ -1,0 +1,92 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add a Windy location",
+        "description": "Enter at least one key from api.windy.com/keys. Each service has its own key. The Windy Plugins key isn't used here.",
+        "data": {
+          "name": "Location name",
+          "location": "Location",
+          "model": "Forecast model",
+          "point_api_key": "Point Forecast API key",
+          "map_api_key": "Map Forecast API key",
+          "webcams_api_key": "Webcams API key"
+        },
+        "data_description": {
+          "model": "gfs is global and runs about 10 days. canHrdps is higher resolution for Canada but has a shorter range, so its daily forecast is short.",
+          "map_api_key": "Used in your browser by the Windy map card, so it can't be checked until the card loads."
+        }
+      },
+      "keys": {
+        "title": "Update Windy API keys",
+        "data": {
+          "point_api_key": "Point Forecast API key",
+          "map_api_key": "Map Forecast API key",
+          "webcams_api_key": "Webcams API key"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Windy rejected this key. Check that it was created for this service.",
+      "cannot_connect": "Couldn't get a response from Windy. Try again.",
+      "no_keys": "Enter at least one API key.",
+      "model_no_data": "This model has no data for this location. Choose another model."
+    },
+    "abort": {
+      "already_configured": "This location is already configured.",
+      "reauth_successful": "API keys updated.",
+      "reconfigure_successful": "API keys updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Windy options",
+        "data": {
+          "model": "Forecast model",
+          "air_quality_model": "Air quality model",
+          "point_interval_minutes": "Forecast update interval",
+          "webcam_interval_minutes": "Webcam update interval",
+          "webcam_radius_km": "Webcam search radius",
+          "webcam_count": "Number of closest webcams",
+          "webcam_ids": "Specific webcam IDs (optional)"
+        },
+        "data_description": {
+          "air_quality_model": "Each model adds one Point Forecast request per update. cams is global; camsEu covers Europe only.",
+          "webcam_interval_minutes": "Free-tier image links expire after 10 minutes, so keep this under 10 on a free key.",
+          "webcam_ids": "Comma-separated, up to 50. When set, these replace the search by distance."
+        }
+      }
+    },
+    "error": {
+      "invalid_webcam_ids": "Enter up to 50 numeric IDs separated by commas."
+    }
+  },
+  "selector": {
+    "air_quality_model": {
+      "options": {
+        "off": "Off",
+        "cams": "CAMS (global)",
+        "camsEu": "CAMS (Europe)"
+      }
+    },
+    "model": {
+      "options": {
+        "gfs": "GFS (global)",
+        "icon": "ICON (global)",
+        "iconEu": "ICON-EU (Europe)",
+        "iconD2": "ICON-D2 (Germany)",
+        "arome": "AROME (France and nearby)",
+        "aromeFrance": "AROME France",
+        "aromeAntilles": "AROME Antilles",
+        "aromeReunion": "AROME Réunion",
+        "namConus": "NAM (contiguous USA)",
+        "namHawaii": "NAM (Hawaii)",
+        "namAlaska": "NAM (Alaska)",
+        "hrrrConus": "HRRR (contiguous USA)",
+        "hrrrAlaska": "HRRR (Alaska)",
+        "canHrdps": "HRDPS (Canada)"
+      }
+    }
+  }
+}

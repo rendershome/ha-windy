@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Windy map</title>
+    <style>
+      html, body, #windy { margin: 0; width: 100%; height: 100%; }
+      #status {
+        position: absolute; inset: 0; display: flex; align-items: center;
+        justify-content: center; padding: 16px; text-align: center;
+        font: 14px system-ui, sans-serif; background: #1c1c1c; color: #eee;
+        z-index: 100000;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="windy"></div>
+    <div id="status">Loading Windy map&hellip;</div>
+    <script>
+      // Contains no secrets: the key arrives by message from the parent card.
+      const LEAFLET = "https://unpkg.com/leaflet@1.4.0/dist/leaflet.js";
+      const LIB_BOOT = "https://api.windy.com/assets/map-forecast/libBoot.js";
+      const LOAD_TIMEOUT_MS = 30000;
+      const status = document.getElementById("status");
+      let started = false;
+
+      const fail = (text) => {
+        status.textContent = text;
+        status.style.display = "flex";
+      };
+
+      const load = (src) =>
+        new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = src;
+          script.onload = resolve;
+          script.onerror = () => reject(new Error(src));
+          document.head.append(script);
+        });
+
+      async function start(config) {
+        const timer = setTimeout(
+          () => fail("The Windy map didn't load. Check the Map Forecast key and any domain restrictions on it."),
+          LOAD_TIMEOUT_MS,
+        );
+        try {
+          // Windy's library requires this order and loads its own map styles.
+          await load(LEAFLET);
+          await load(LIB_BOOT);
+        } catch (err) {
+          clearTimeout(timer);
+          fail("Couldn't download the Windy map library.");
+          return;
+        }
+        windyInit(
+          { key: config.key, lat: config.lat, lon: config.lon, zoom: config.zoom },
+          ({ map, store }) => {
+            clearTimeout(timer);
+            status.style.display = "none";
+            if (config.overlay) store.set("overlay", config.overlay);
+            if (config.level) store.set("level", config.level);
+            if (config.product) store.set("product", config.product);
+            L.circleMarker([config.marker.lat, config.marker.lon], {
+              radius: 6, color: "#fff", weight: 2, fillColor: "#03a9f4", fillOpacity: 1,
+            }).addTo(map);
+          },
+        );
+      }
+
+      window.addEventListener("message", (event) => {
+        if (event.source !== window.parent || event.origin !== location.origin) return;
+        if (event.data?.type !== "windy-init" || started) return;
+        started = true;
+        start(event.data);
+      });
+      window.parent.postMessage({ type: "windy-ready" }, location.origin);
+    </script>
+  </body>
+</html>
